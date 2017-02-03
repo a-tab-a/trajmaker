@@ -18,42 +18,43 @@
 % OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 % SOFTWARE.
 
-% This tutorial introduces the new user to the TrajMaker class and its related
+% The TrajMaker class is a tool that creates complex, realistic trajectories by
+% enforcing nearly continuous changes in acceleration in three dimensions. This
+% tutorial introduces the new user to the TrajMaker class and its related
 % scripts. The class's members and interface are explained in detail, and
 % several trajectory creation examples are given. Finally, several scripts
 % for loading and plotting saved trajectory files are discussed. This tutorial
 % also serves as an executable script.
 
-% This tutorial is a valid script and may be executed if desired.
-
-% The TrajMaker class is a tool that creates complex, realistic trajectories by
-% enforcing nearly continuous changes in acceleration in three dimensions.
-
-% The TrajMaker class contains eleven user-settable members:
+% The TrajMaker class contains eleven user-settable members, a setter and getter
+% method for each member, a flexible constructor, and three maneuver methods.
 %
-%     positionNED_m_,
-%     speed_mps_,
-%     bearing_deg_,
-%     pitch_deg_,
-%     maxAcc_gs_,
-%     maxJerk_gsps_,
-%     nominalUpdateRate_s_,
-%     outputFileName_,
-%     thickUpdates_,
-%     useNUE_Output_, and
-%     outputPrecision_,
-
-% a setter method for each member, a flexible constructor, and three maneuver
-% methods:
+% The eleven user-settable members, along with their setters and getters are:
 %
-%     ChangeDirection(...),
-%     ChangeSpeed(...), and
-%     PropagateToTime(...).
+%     Member                   Setter                  Getter
+%
+%     positionNED_m_           SetPosition             GetPosition
+%     speed_mps_               SetSpeed                GetSpeed
+%     bearing_deg_             SetBearing              GetBearing
+%     pitch_deg_               SetPitch                GetPitch
+%     maxAcc_gs_               SetMaxAcceleration      GetMaxAcceleration
+%     maxJerk_gsps_            SetMaxJerk              GetMaxJerk
+%     nominalUpdateRate_s_     SetNominalUpdateRate    GetNominalUpdateRate
+%     outputFileName_          SetOutputFileName       GetOutputFileName
+%     thickUpdates_            SetThickUpdates         GetThickUpdates
+%     useNUE_Output_           SetUseNUE_Output        GetUseNUE_Output
+%     outputPrecision_         SetOutputPrecision      GetOutputPrecision
+%
+% and the maneuver methods are:
+%
+%     ChangeDirection
+%     ChangeSpeed
+%     PropagateToTime
 
 % TrajMaker objects are configured up-front via the constructor and setter
 % methods, and maneuvers are added afterwards. Once a maneuver is added,
 % object configuration is locked, and calling any setter method will trigger an
-% error message.
+% error message. Getter methods may be called at any time.
 
 % TrajMaker is a value class, and value class syntax must be used when calling
 % methods to update an object's internal state, e.g.:
@@ -203,15 +204,17 @@
 % will automatically be set to the object's maximum acceleration and jerk.
 %
 % The algorithm used by ChangeDirection moves the velocity vector from point to
-% point along the great circle arc connecting the starting and ending points.
+% point along the great circle arc connecting the starting and ending vectors.
 % While this creates clean, efficient maneuvers, they may not always achieve
 % what is desired. For instance, given the starting orientation (0.0, 45.0) and
 % the ending orientation (180.0, 45.0) a spiral/corkscrew might be expected.
-% However, the great circle arc connecting these points travels over the north
+% However, the great circle arc connecting these vectors travels over the north
 % pole, which yields a loop-like trajectory. To accommodate spiraling, a string
 % 'spiral' may be passed as a final parameter to ChangeDirection. When this
 % optional parameter is detected, acceleration is restricted to the horizontal
-% plane.
+% plane. Spiraling is only permitted when the final pitch matches the current
+% pitch; otherwise the request will be ignored and a warning message will be
+% printed.
 %
 % Another nuance of ChangeDirection worth noting is the case of antipodal
 % orientations-- that is, opposite orientations, such as east-west. Antipodal
@@ -267,7 +270,7 @@
 
 % Create a simple, outbound trajectory using mostly default values.
 traj1 = TrajMaker;
-traj1 = traj1.SetOutputFileName('Outbound');;
+traj1 = traj1.SetOutputFileName('Outbound');
 
 traj1 = traj1.ChangeSpeed(0.0, 400.0, 6.0, 2.0);
 
@@ -322,7 +325,7 @@ traj4 = traj4.ChangeDirection(0.0, 0.0, 0.0);
 % LoadTrajFile loads the contents of a trajectory file to a structure,
 % PlotTrajFile creates a 3D position-velocity quiver plot of a trajectory, and
 % ValidateTrajFile creates a handful of plots displaying data per dimension,
-% e.g. north-east-down, including achieved acceleration.
+% e.g. North-East-Down, including achieved acceleration.
 %
 % The full definition of LoadTrajFile is:
 %
