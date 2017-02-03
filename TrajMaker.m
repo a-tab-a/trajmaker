@@ -768,8 +768,6 @@ methods (Access = public)
         startingTime_s, ...
         finalBearing_deg, ...
         finalPitch_deg, ...
-        acceleration_gs, ...
-        jerk_gsps,
         varargin)
         
         % Add dependencies to path.
@@ -777,7 +775,50 @@ methods (Access = public)
         
         obj = obj.InitializeOutputFile();
         
-        % Accommodate for some parameters being optional.
+        % Process optional input.
+        if (length(varargin) > 3)
+            error('ChangeDirection: Only up to three optional parameters are allowed.');
+        end
+        
+        numStringParameters = 0;
+        numNumericParameters = 0;
+        stringParameterIndex = 0; % relative to start of varargin
+        for i = 1:1:length(varargin)
+            if (ischar(varargin{i}))
+                numStringParameters = numStringParameters + 1;
+                stringParameterIndex = i;
+            elseif (isnumeric(varargin{i}))
+                numNumericParameters = numNumericParameters + 1;
+            else
+                parameterIndex = nargin - length(varargin) + i - 1; % -1 to account for obj being a parameter
+                error('ChangeDirection: invalid optional input: parameter # %d.', ...
+                    parameterIndex);
+            end
+        end
+        
+        if (numStringParameters > 1)
+            error('ChangeDirection: Only one optional parameter may be a string.');
+        elseif ((numStringParameters == 1) && (stringParameterIndex < length(varargin)))
+            error('ChangeDirection: Optional string must be the final parameter.');
+        end
+        
+        if (numNumericParameters > 2)
+            error('ChangeDirection: Too many numeric inputs');
+        end
+        
+        for i = 1:1:length(varargin)
+            if (ischar(varargin{i}))
+                candidateString = varargin{i};
+            elseif (isnumeric(varargin{i}))
+                if (exist('acceleration_gs', 'var') ~= 1)
+                    acceleration_gs = varargin{i};
+                elseif (exist('jerk_gsps', 'var') ~= 1)
+                    jerk_gsps = obj.maxJerk_gsps_;
+                end
+            end
+        end
+        
+        % If optional parameters were not found, use existing values.
         if (exist('acceleration_gs', 'var') ~= 1)
             acceleration_gs = obj.maxAcc_gs_;
         end
@@ -834,8 +875,8 @@ methods (Access = public)
         
         % Check for a spiraling maneuver request.
         spiralingManeuver = false;
-        if (length(varargin) > 0)
-            if (ischar(varargin{1}) && strcmp(varargin{1}, 'spiral'))
+        if (exist('candidateString', 'var') == 1)
+            if (strcmp(candidateString, 'spiral'))
                 % Only allow spiraling for requests whose final pitch match the
                 % current pitch.
                 if (finalPitch_deg == obj.pitch_deg_)
@@ -848,8 +889,8 @@ methods (Access = public)
                         obj.pitch_deg_);
                 end
             else
-                warning(['ChangeDirection: Invalid varargin input. Only ', ...
-                    '''spiral'' is a valid input.']);
+                warning(['ChangeDirection: Invalid string input. Only ', ...
+                    '''spiral'' is a valid string. Ignoring...']);
             end
         end
 

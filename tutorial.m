@@ -182,32 +182,36 @@
 %         startingTime_s, ...
 %         finalBearing_deg, ...
 %         finalPitch_deg, ...
-%         acceleration_gs, ...
-%         jerk_gsps,
 %         varargin);
 %
 % where startingTime_s (units of seconds) is a scalar numeric indicating the
 % time the maneuver should be executed, finalBearing_deg (units of degrees) is a
-% scalar numeric indicating the desired final bearing, finalPitch_deg (units of
-% degrees) is a scalar numeric indicating the desired final pitch, acceleration_gs
-% (units of g's) is a scalar numeric indicating the desired acceleration
-% throughout the maneuver, and jerk_gsps (units of g's per second) is a scalar
-% numeric indicating the desired jerk throughout the maneuver. If the
-% acceleration/jerk exceeds the maximum value established at initialization, a
-% warning message will be printed and the value reduced to its maximum limit.
+% scalar numeric indicating the desired final bearing, and finalPitch_deg (units
+% of degrees) is a scalar numeric indicating the desired final pitch. Up to
+% three optional parameters may also be passed: the maneuver's requested
+% acceleration, the maneuver's requested jerk, and a string to request a
+% spiraling maneuver-- see the discussion below. If acceleration (units of g's)
+% is passed, it must be a scalar numeric. If jerk (units of g's per second) is
+% passed, it must also be a scalar numeric. The first numeric input will be
+% assigned to the desired acceleration, and the second numeric input will be
+% assigned to the desired jerk. Whether requested acceleration or jerk are
+% passed, the optional string parameter must be the final parameter passed.
+%
+% If a requested acceleration or jerk exceeds its maximum value established at
+% initialization, a warning message will be printed and the value reduced to its
+% maximum value. If requested acceleration or jerk are not passed, they will
+% automatically be set to the object's maximum acceleration or jerk established
+% at initialization.
+%
 % If the final orientation is nearly the same as the target's current
 % orientation, the maneuver may be aborted-- a warning message will be printed
-% to indicate this. Acceleration is ramped up and down linearly as the maneuver
-% begins and ends.
-%
-% If acceleration_gs and/or jerk_gsps are not passed to ChangeDirection, they
-% will automatically be set to the object's maximum acceleration and jerk.
+% to indicate this. 
 %
 % The algorithm used by ChangeDirection moves the velocity vector from point to
 % point along the great circle arc connecting the starting and ending vectors.
 % While this creates clean, efficient maneuvers, they may not always achieve
 % what is desired. For instance, given the starting orientation (0.0, 45.0) and
-% the ending orientation (180.0, 45.0) a spiral/corkscrew might be expected.
+% the ending orientation (180.0, 45.0), a spiral/corkscrew might be expected.
 % However, the great circle arc connecting these vectors travels over the north
 % pole, which yields a loop-like trajectory. To accommodate spiraling, a string
 % 'spiral' may be passed as a final parameter to ChangeDirection. When this
@@ -369,5 +373,5 @@ traj4 = traj4.ChangeDirection(0.0, 0.0, 0.0);
 % select a trajectory file.
 
 % Plot and validate the "Evasive" trajectory.
-PlotTrajFile(traj2.outputFileName_);
-ValidateTrajFile(traj2.outputFileName_);
+PlotTrajFile(traj2.GetOutputFileName());
+ValidateTrajFile(traj2.GetOutputFileName());
