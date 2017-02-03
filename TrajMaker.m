@@ -421,6 +421,10 @@ end % static, private methods
 
 methods (Access = public)
 
+    function value = GetPosition(obj)
+        value = obj.positionNED_m_;
+    end % GetPosition
+
     function obj = SetPosition(obj, positionNED_m)
 
         if (obj.isInitialized_)
@@ -435,6 +439,10 @@ methods (Access = public)
         obj.positionNED_m_ = positionNED_m;
         
     end % SetPosition
+    
+    function value = GetSpeed(obj)
+        value = obj.speed_mps_;
+    end % GetSpeed
     
     function obj = SetSpeed(obj, speed_mps)
     
@@ -451,6 +459,10 @@ methods (Access = public)
        
     end % SetSpeed
     
+    function value = GetBearing(obj)
+        value = obj.bearing_deg_;
+    end % GetBearing
+    
     function obj = SetBearing(obj, bearing_deg)
     
         if (obj.isInitialized_)
@@ -465,6 +477,10 @@ methods (Access = public)
         obj.bearing_deg_ = bearing_deg;
         
     end % SetBearing
+    
+    function value = GetPitch(obj)
+        value = obj.pitch_deg_;
+    end % GetPitch
     
     function obj = SetPitch(obj, pitch_deg)
     
@@ -481,6 +497,10 @@ methods (Access = public)
         
     end % SetPitch
     
+    function value = GetMaxAcceleration(obj)
+        value = obj.maxAcc_gs_;
+    end % GetMaxAcceleration
+    
     function obj = SetMaxAcceleration(obj, maxAcc_gs)
     
         if (obj.isInitialized_)
@@ -495,6 +515,10 @@ methods (Access = public)
         obj.maxAcc_gs_ = maxAcc_gs;
         
     end % SetMaxAcceleration
+    
+    function value = GetMaxJerk(obj)
+        value = obj.maxJerk_gsps_;
+    end % GetMaxJerk
     
     function obj = SetMaxJerk(obj, maxJerk_gsps)
 
@@ -511,6 +535,10 @@ methods (Access = public)
         
     end % SetMaxJerk
     
+    function value = GetNominalUpdateRate(obj)
+        value = obj.nominalUpdateRate_s_;
+    end % GetNominalUpdateRate
+    
     function obj = SetNominalUpdateRate(obj, nominalUpdateRate_s)
 
         if (obj.isInitialized_)
@@ -525,6 +553,10 @@ methods (Access = public)
         obj.nominalUpdateRate_s_ = nominalUpdateRate_s;
         
     end % SetNominalUpdateRate
+    
+    function value = GetOutputFileName(obj)
+        value = obj.outputFileName_;
+    end % GetOutputFileName
     
     function obj = SetOutputFileName(obj, fileName)
 
@@ -551,6 +583,10 @@ methods (Access = public)
     
     end % SetOutputFileName
     
+    function value = GetThickUpdates(obj)
+        value = obj.thickUpdates_;
+    end % GetThickUpdates
+    
     function obj = SetThickUpdates(obj, thickUpdates)
 
         if (obj.isInitialized_)
@@ -566,6 +602,10 @@ methods (Access = public)
     
     end % SetThickUpdates
     
+    function value = GetUseNUE_Output(obj)
+        value = obj.useNUE_Output_;
+    end % GetUseNUE_Output
+    
     function obj = SetUseNUE_Output(obj, useNUE_Output)
 
         if (obj.isInitialized_)
@@ -580,6 +620,10 @@ methods (Access = public)
         obj.useNUE_Output_ = useNUE_Output;
     
     end % SetUseNUE_Output
+    
+    function value = GetOutputPrecision(obj)
+        value = obj.outputPrecision_;
+    end % GetOutputPrecision
     
     function obj = SetOutputPrecision(obj, outputPrecision)
     
