@@ -813,7 +813,7 @@ methods (Access = public)
                 if (exist('acceleration_gs', 'var') ~= 1)
                     acceleration_gs = varargin{i};
                 elseif (exist('jerk_gsps', 'var') ~= 1)
-                    jerk_gsps = obj.maxJerk_gsps_;
+                    jerk_gsps = varargin{i};
                 end
             end
         end
