@@ -399,19 +399,20 @@ traj6 = traj6.ChangeDirectionAndSpeed(traj6.GetClockTime(), 180.0, 45.0, 300.0, 
 %     ValidateTrajFile(filePath);
 %
 % where filePath is a string (char array) file path to a trajectory file.
-% ValidateTrajFile creates three figures useful for data analysis and ensuring
+% ValidateTrajFile creates four figures useful for data analysis and ensuring
 % achieved acceleration is in fact continuous, the driving goal of the TrajMaker
 % class. The figures also show whether acceleration and jerk constraints have
 % been honored. The first figure generated shows trajectory position in NED or
 % NUE as three sub-plots, one for each dimension. The second figure generated
 % shows trajectory velocity, and velocity as the time derivative of position, in
 % NED or NUE as three sub-plots, one for each dimension. A fourth sub-plot shows
-% the velocity magnitude. The third figure generated shows trajectory acceleration
-% as the time derivative of velocity, and as the second time derivative of
-% position, in NED or NUE as three sub-plots, one for each dimension. A fourth
-% sub-plot shows the acceleration magnitude. If ValidateTrajFile is called
-% without passing a string, a file selection dialog will prompt the user to
-% select a trajectory file.
+% the velocity magnitude. The third figure generated shows the bearing and pitch
+% calculated from velocity. The fourth and final figure shows trajectory
+% acceleration as the time derivative of velocity, and as the second time
+% derivative of position, in NED or NUE as three sub-plots, one for each
+% dimension. A fourth sub-plot shows the acceleration magnitude. If
+% ValidateTrajFile is called without passing a string, a file selection dialog
+% will prompt the user to select a trajectory file.
 
 % Plot and validate a trajectory.
 PlotTrajFile(traj6.GetOutputFileName());

@@ -125,11 +125,39 @@ function ValidateTrajFile(filePath)
     grid on;
     linkaxes([ax4, ax5, ax6, ax7], 'x');
     
+    % Orientation
+    titleString = 'Orientation';
+    GetFig(titleString);
+    clf;
+
+    rad2deg = 180. / pi;
+    bearing_deg = atan2(data.VelE_mps, data.VelN_mps) .* rad2deg;
+    horizontalVelocity_mps = sqrt(data.VelN_mps .^ 2 + data.VelE_mps .^ 2);
+    if (isNED)
+        pitch_deg = atan(-data.VelD_mps ./ horizontalVelocity_mps) .* rad2deg;
+    else % NUE
+        pitch_deg = atan(data.VelU_mps ./ horizontalVelocity_mps) .* rad2deg;
+    end
+
+    ax8 = subplot(2,1,1);
+    plot(data.Time_s, bearing_deg, 'r');
+    ylabel('Bearing (deg)');
+    titleCell = {[name, ext, ': ', titleString]};
+    title(titleCell);
+    grid on;
+
+    ax9 = subplot(2,1,2);
+    plot(data.Time_s, pitch_deg, 'b');
+    ylabel('Pitch (deg)');
+    xlabel('Time (s)');
+    grid on;
+    linkaxes([ax8, ax9], 'x');
+
     % Acceleration
     GetFig('Acceleration');
     clf;
     
-    ax8 = subplot(4,1,1);
+    ax10 = subplot(4,1,1);
     accFromVelN_gs = diff(data.VelN_mps) ./ dT_s ./ 9.8;
     dT2_s = diff(data.Time_s(1:end-1));
     accFromPosN_gs = diff(velFromPosN_mps) ./ dT2_s ./ 9.8;
@@ -143,7 +171,7 @@ function ValidateTrajFile(filePath)
     title(titleCell);
     grid on;
     
-    ax9 = subplot(4,1,2);
+    ax11 = subplot(4,1,2);
     accFromVelE_gs = diff(data.VelE_mps) ./ dT_s ./ 9.8;
     accFromPosE_gs = diff(velFromPosE_mps) ./ dT2_s ./ 9.8;
     hold on;
@@ -153,7 +181,7 @@ function ValidateTrajFile(filePath)
     ylabel('AccE (g''s)');
     grid on;
     
-    ax10 = subplot(4,1,3);
+    ax12 = subplot(4,1,3);
     if (isNED)
         accFromVelD_gs = diff(data.VelD_mps) ./ dT_s ./ 9.8;
         accFromPosD_gs = diff(velFromPosD_mps) ./ dT2_s ./ 9.8;
@@ -173,7 +201,7 @@ function ValidateTrajFile(filePath)
     end
     grid on;
     
-    ax11 = subplot(4,1,4);
+    ax13 = subplot(4,1,4);
     if (isNED)
         accMagFromVel_gs = sqrt(accFromVelN_gs .^ 2 + accFromVelE_gs .^ 2 + ...
             accFromVelD_gs .^ 2);
@@ -192,6 +220,6 @@ function ValidateTrajFile(filePath)
     ylabel('|Acc| (g''s)');
     xlabel('Time (s)');
     grid on;
-    linkaxes([ax8, ax9, ax10, ax11], 'x');
+    linkaxes([ax10, ax11, ax12, ax13], 'x');
 
 end % ValidateTrajFile
