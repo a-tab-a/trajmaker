@@ -1011,8 +1011,6 @@ methods (Access = public)
         [pointsAreClose, pointsAreAntipodal, p, q, anglePq_deg] = ...
             getAngleInfo(az1_deg, el1_deg, az2_deg, el2_deg, threshold_deg);
 
-        fprintf('ChangeDirection: anglePq_deg = %f.\n', anglePq_deg);
-
         if (pointsAreClose)
             % The change is insignificant.
             warning(['ChangeDirection: Starting angles (%f, %f deg) and ending angles ', ...
