@@ -27,9 +27,9 @@
 % also serves as an executable script.
 
 % The TrajMaker class contains eleven user-settable members, a setter and getter
-% method for each member, a flexible constructor, and three maneuver methods.
+% method for each member, a flexible constructor, and several maneuver methods.
 %
-% The eleven user-settable members, along with their setters and getters are:
+% The user-settable members, along with their setters and getters are:
 %
 %     Member                   Setter                  Getter
 %
@@ -49,6 +49,7 @@
 %
 %     ChangeDirection
 %     ChangeSpeed
+%     ChangeDirectionAndSpeed
 %     PropagateToTime
 
 % TrajMaker objects are configured up-front via the constructor and setter
@@ -161,9 +162,11 @@
 % Manuever methods:
 %
 % The ChangeDirection() method changes target orientation while keeping speed
-% constant, and the ChangeSpeed() method changes target speed while keeping
-% orientation constant. The PropagateToTime() method maintains straight and
-% level flight up until a certain time.
+% constant, the ChangeSpeed() method changes target speed while keeping
+% orientation constant, and the ChangeDirectionAndSpeed() changes direction and
+% speed simultaneously so that the final orientation and speed are reached at
+% the same time. The PropagateToTime() method maintains straight and level
+% flight up until a certain time.
 %
 % Each maneuver method expects a time value as the first argument to determine
 % when to execute the maneuver. An internal clock keeps track of the time
@@ -259,6 +262,25 @@
 % If acceleration_gs and/or jerk_gsps are not passed to ChangeSpeed, they will
 % automatically be set to the object's maximum acceleration and jerk.
 %
+% The full definition of ChangeDirectionAndSpeed() is:
+%
+%     ChangeDirectionAndSpeed(...
+%         startingTime_s, ...
+%         finalBearing_deg, ...
+%         finalPitch_deg, ...
+%         finalSpeed_mps, ...
+%         varargin)
+%
+% where the expected units are the same as those for ChangeDirection() and
+% ChangeSpeed(). Optional parameters function in the same manner as
+% ChangeDirection(). ChangeDirectionAndSpeed may call ChangeDirection instead
+% if the final speed is nearly the same as the target's current speed. It may
+% also call ChangeSpeed instead if the final orientation is nearly the same as
+% the target's current orientation. Finally, the maneuver may abort if both the
+% final orientation and final velocity are similar to the target's current
+% orientation and velocity. A warning message will be printed if any of these
+% occur.
+%
 % The full definition of PropagateToTime() is:
 %
 %     PropagateToTime(t_s);
@@ -267,8 +289,8 @@
 % trajectory should be propagated to, maintaining its current speed and
 % orientation. If the time requested is less than or equal to the internal
 % clock time, propagation is ignored and no warning or error message is printed.
-% This method is called automatically by ChangeDirection() and ChangeSpeed() to
-% advance the target to the requested maneuver time.
+% This method is called automatically by the other maneuver methods to advance
+% the target to the requested maneuver time.
 
 % The following examples create a handful of trajectories.
 
@@ -323,6 +345,19 @@ traj4 = traj4.SetBearing(180.0);
 traj4 = traj4.ChangeDirection(0.0, 179.0, 0.0);
 traj4 = traj4.ChangeDirection(0.0, 0.0, 0.0);
 
+% Make a U-turn while increasing speed.
+traj5 = TrajMaker;
+traj5 = traj5.SetOutputFileName('U-Turn_IncreaseSpeed');
+
+traj5 = traj5.ChangeDirectionAndSpeed(0.0, 180.0, 0.0, 300.0);
+
+% Climb and turn in a corkscrew while increasing speed.
+traj6 = TrajMaker;
+traj6 = traj6.SetOutputFileName('Corkscrew_IncreaseSpeed');
+
+traj6 = traj6.ChangeDirection(0.0, 0.0, 45.0);
+traj6 = traj6.ChangeDirectionAndSpeed(0.0, 180.0, 45.0, 300.0, 'spiral');
+
 % Once a trajectory has been created and saved to file, other scripts may be
 % used to access and view the data.
 %
@@ -372,6 +407,6 @@ traj4 = traj4.ChangeDirection(0.0, 0.0, 0.0);
 % without passing a string, a file selection dialog will prompt the user to
 % select a trajectory file.
 
-% Plot and validate the "Evasive" trajectory.
-PlotTrajFile(traj2.GetOutputFileName());
-ValidateTrajFile(traj2.GetOutputFileName());
+% Plot and validate a trajectory.
+PlotTrajFile(traj6.GetOutputFileName());
+ValidateTrajFile(traj6.GetOutputFileName());
