@@ -26,13 +26,14 @@
 % for loading and plotting saved trajectory files are discussed. This tutorial
 % also serves as an executable script.
 
-% The TrajMaker class contains eleven user-settable members, a setter and getter
-% method for each member, a flexible constructor, and several maneuver methods.
+% The TrajMaker class contains twelve user-gettable members, eleven of which are
+% user-settable, a flexible constructor, and several maneuver methods.
 %
-% The user-settable members, along with their setters and getters are:
+% The members, along with their setters and getters are:
 %
 %     Member                   Setter                  Getter
 %
+%     clockTime_s_             N/A                     GetClockTime
 %     positionNED_m_           SetPosition             GetPosition
 %     speed_mps_               SetSpeed                GetSpeed
 %     bearing_deg_             SetBearing              GetBearing
@@ -84,6 +85,11 @@
 %     myTraj = myTraj.SetSpeed(300.0);
 
 % Members and setter methods:
+%
+% An internal clock is maintained by each TrajMaker object to time maneuvers. As
+% maneuvers are executed, the clock is advanced from a starting time of zero
+% seconds. The clock may not be set by the user; it may only be checked or used
+% to time subsequent maneuvers.
 %
 % Each setter method performs sanitization checks on input arguments. If invalid
 % input is detected, an error message will halt execution and explain why the
@@ -175,9 +181,9 @@
 % fast-forwarded to the clock time and a warning message is printed. If a time
 % value passed to a maneuver method is ahead of the internal clock time, the
 % target trajectory is propagated along its current orientation up until the
-% maneuver time, and then the maneuver is executed. Thus, if several maneuvers
-% are desired in immediate succession, the same time value may be used for each
-% one, and the time warning messages may be ignored.
+% maneuver time, and then the maneuver is executed. If several maneuvers are
+% desired in immediate succession, the internal clock time may be used for the
+% maneuver starting time.
 %
 % The full definition of ChangeDirection is:
 %
@@ -313,11 +319,11 @@ traj2 = traj2.SetUseNUE_Output(true);
 traj2 = traj2.SetNominalUpdateRate(0.2);
 traj2 = traj2.SetThickUpdates(true);
 
-% Use the same time to guarantee maneuvering as quickly as possible.
+% Use the clock time to guarantee maneuvering as quickly as possible.
 traj2 = traj2.ChangeDirection(5.0, 180.0, -60.0, 5.0, 3.0); % pitch down
-traj2 = traj2.ChangeDirection(5.0, 0.0, -60.0, 5.0, 3.0, 'spiral'); % spiral
-traj2 = traj2.ChangeSpeed(5.0, 400.0, 5.0, 3.0); % accelerate
-traj2 = traj2.ChangeDirection(25.0, 0.0, 0.0, 5.0, 3.0); % level off
+traj2 = traj2.ChangeDirection(traj2.GetClockTime(), 0.0, -60.0, 5.0, 3.0, 'spiral'); % spiral
+traj2 = traj2.ChangeSpeed(traj2.GetClockTime(), 400.0, 5.0, 3.0); % accelerate
+traj2 = traj2.ChangeDirection(traj2.GetClockTime(), 0.0, 0.0, 5.0, 3.0); % level off
 
 % Make an inbound S-turning trajectory.
 traj3 = TrajMaker;
@@ -326,10 +332,10 @@ traj3 = traj3.SetPosition([100e3, 0.0, -6e3]);
 traj3 = traj3.SetSpeed(300.0);
 traj3 = traj3.SetBearing(180.0);
 
-% Use the same time to maneuver as quickly as possible.
+% Use the clock time to maneuver as quickly as possible.
 for i = 1:1:5
-    traj3 = traj3.ChangeDirection(0.0, 225.0, 0.0, 6.0, 3.0);
-    traj3 = traj3.ChangeDirection(0.0, 135.0, 0.0, 6.0, 3.0);
+    traj3 = traj3.ChangeDirection(traj3.GetClockTime(), 225.0, 0.0, 6.0, 3.0);
+    traj3 = traj3.ChangeDirection(traj3.GetClockTime(), 135.0, 0.0, 6.0, 3.0);
 end
 
 % Make a simple, easterly U-turn from south to north.
@@ -343,7 +349,7 @@ traj4 = traj4.SetBearing(180.0);
 % acceleration and jerk unspecified to fall back on maximum acceleration and
 % jerk.
 traj4 = traj4.ChangeDirection(0.0, 179.0, 0.0);
-traj4 = traj4.ChangeDirection(0.0, 0.0, 0.0);
+traj4 = traj4.ChangeDirection(traj4.GetClockTime(), 0.0, 0.0);
 
 % Make a U-turn while increasing speed.
 traj5 = TrajMaker;
@@ -356,7 +362,7 @@ traj6 = TrajMaker;
 traj6 = traj6.SetOutputFileName('Corkscrew_IncreaseSpeed');
 
 traj6 = traj6.ChangeDirection(0.0, 0.0, 45.0);
-traj6 = traj6.ChangeDirectionAndSpeed(0.0, 180.0, 45.0, 300.0, 'spiral');
+traj6 = traj6.ChangeDirectionAndSpeed(traj6.GetClockTime(), 180.0, 45.0, 300.0, 'spiral');
 
 % Once a trajectory has been created and saved to file, other scripts may be
 % used to access and view the data.

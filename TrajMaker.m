@@ -486,6 +486,10 @@ end % static, private methods
 
 methods (Access = public)
 
+    function value = GetClockTime(obj)
+        value = obj.clockTime_s_;
+    end % GetClockTime
+
     function value = GetPosition(obj)
         value = obj.positionNED_m_;
     end % GetPosition
