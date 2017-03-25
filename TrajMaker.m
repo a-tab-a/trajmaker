@@ -246,7 +246,7 @@ methods (Static = true, Access = private)
 
         if (abs(value) > 90.)
             isValid = false;
-            errMsg = 'value must be within [-90., 90.]';
+            errMsg = 'value must be within [-90., 90.].';
             return;
         end
     
@@ -418,7 +418,7 @@ methods (Static = true, Access = private)
     end % IsOutputPrecisionInputValid
 
     % Select a third point (az3, el3) to define a unique great circle.
-    function [az3_deg, el3_deg] = GetIntermediateAntipodalPoint(...
+    function [az3_deg, el3_deg] = GetIntermediateAntipodalAngles(...
         az1_deg, el1_deg, az2_deg, el2_deg);
 
         az3_deg = az1_deg + (az2_deg - az1_deg) / 2.;
@@ -435,7 +435,7 @@ methods (Static = true, Access = private)
             el3_deg = mod(el3_deg, 90.);
         end
 
-    end % GetIntermediateAntipodalPoint
+    end % GetIntermediateAntipodalAngles
 
     % Determine how long a ChangeSpeed maneuver would take.
     function [tNet_s, tRamp_s, tInBetween_s] = TimeRequiredToChangeSpeed(...
@@ -826,67 +826,115 @@ methods (Access = private)
 
      % Process optional input for ChangeDirection and ChangeDirectionAndSpeed.
     function options = ProcessVarargin(obj, functionName, varargin)
-        
-        if (length(varargin) > 3)
-            error('%s: Only up to three optional parameters are allowed.', ...
-                functionName);
-        end
-        
+
+        % Initialize the struct.
         options.requestSpiral = false;
 
-        numStringParameters = 0;
-        numNumericParameters = 0;
-        stringParameterIndex = 0; % relative to start of varargin
-        for i = 1:1:length(varargin)
-            if (ischar(varargin{i}))
-                numStringParameters = numStringParameters + 1;
-                stringParameterIndex = i;
-            elseif (isnumeric(varargin{i}))
-                numNumericParameters = numNumericParameters + 1;
-            else
-                parameterIndex = nargin - length(varargin) + i - 1; % -1 to account for obj being a parameter
-                error('%s: invalid optional input: parameter # %d.', ...
-                    functionName, parameterIndex);
+        counter = 1;
+        numVarargin = length(varargin);
+
+        while (counter <= numVarargin)
+
+            allStringParametersFilled = options.requestSpiral && ...
+                isfield(options, 'connectingAz_deg') && ...
+                isfield(options, 'connectingEl_deg');
+
+            % If we have maxed out the optional string parameters, we should
+            % already be done due to the "strings come last" requirement.
+            if (allStringParametersFilled)
+                error('%s: invalid parameter(s) following string input.', functionName);
             end
-        end
-        
-        if (numStringParameters > 1)
-            error('%s: Only one optional parameter may be a string.', ...
-                functionName);
-        elseif (numStringParameters == 1)
-            if (stringParameterIndex < length(varargin))
-                error('%s: Optional string must be the final parameter.', ...
-                    functionName);
-            elseif (~strcmp(varargin{stringParameterIndex}, 'spiral'))
-                error('The only valid optional string input is ''spiral''.');
-            else
-                options.requestSpiral = true;
-            end
-        end
-        
-        if (numNumericParameters > 2)
-            error('%s: Too many numeric inputs.', functionName);
-        end
-        
-        for i = 1:1:length(varargin)
-            if (isnumeric(varargin{i}))
-                if (~isfield(options, 'acceleration_gs'))
-                    options.acceleration_gs = varargin{i};
-                elseif (~isfield(options, 'jerk_gsps'))
-                    options.jerk_gsps = varargin{i};
+
+            anyStringParametersFilled = options.requestSpiral || ...
+                isfield(options, 'connectingAz_deg') || ...
+                isfield(options, 'connectingEl_deg');
+
+            if (isnumeric(varargin{counter}))
+                if (anyStringParametersFilled)
+                    error('%s: invalid optional input parameter (#%d) -- numerics must preceed strings.', ...
+                        functionName, counter);
+                else
+                    if (~isfield(options, 'acceleration_gs'))
+                        options.acceleration_gs = varargin{counter};
+                    elseif (~isfield(options, 'jerk_gsps'))
+                        options.jerk_gsps = varargin{counter};
+                    else
+                        error('%s: invalid optional input parameter (#%d) -- numeric input exhausted.', ...
+                            functionName, counter);
+                    end
                 end
+            elseif (ischar(varargin{counter}))
+                if (strcmp(varargin{counter}, 'spiral'))
+                    if (~options.requestSpiral)
+                        options.requestSpiral = true;
+                    else
+                        error('%s: invalid optional input parameter (#%d) -- redundant string: ''%s''.', ...
+                            functionName, counter, varargin{counter});
+                    end
+                elseif (strcmp(varargin{counter}, 'connect'))
+                    if (~isfield(options, 'connectingAz_deg') && ...
+                        ~isfield(options, 'connectingEl_deg'))
+
+                        % A two-element numeric array of valid angles must follow.
+                        if (counter >= numVarargin)
+                            error('%s: invalid optional input parameter (#%d) -- missing pair parameter following ''connect''.', ...
+                                functionName, counter);
+                        end
+
+                        counter = counter + 1;
+
+                        if (~isnumeric(varargin{counter}))
+                            error('%s: invalid optional input parameter (#%d) -- not numeric following ''connect''.', ...
+                                functionName, counter);
+                        end
+
+                        if (length(varargin{counter}) ~= 2)
+                            error('%s: invalid optional input parameter (#%d) -- must have length of 2.', ...
+                                functionName, counter);
+                        end
+
+                        angles = varargin{counter};
+
+                        [isValid, message] = TrajMaker.IsBearingInputValid(angles(1));
+                        if (~isValid)
+                            error('%s: invalid optional input parameter (#%d) -- invalid bearing angle: %s', ...
+                                functionName, counter, message);
+                        end
+
+                        [isValid, message] = TrajMaker.IsPitchInputValid(angles(2));
+                        if (~isValid)
+                            error('%s: invalid optional input parameter (#%d) -- invalid pitch angle: %s', ...
+                                functionName, counter, message);
+                        end
+
+                        options.connectingAz_deg = angles(1);
+                        options.connectingEl_deg = angles(2);
+
+                    else
+                        error('%s: invalid optional input parameter (#%d) -- redundant string: ''%s''.', ...
+                            functionName, counter, varargin{counter});
+                    end
+                else
+                    error('%s: invalid optional input parameter (#%d) -- unrecognized string: ''%s''.', ...
+                        functionName, counter, varargin{counter});
+                end
+            else
+                error('%s: invalid optional input parameter (#%d) -- not numeric or string.', ...
+                    functionName, counter);
             end
+
+            counter = counter + 1;
         end
-        
+
         % If optional parameters were not found, use existing values.
         if (~isfield(options, 'acceleration_gs'))
             options.acceleration_gs = obj.maxAcc_gs_;
         end
-        
+
         if (~isfield(options, 'jerk_gsps'))
             options.jerk_gsps = obj.maxJerk_gsps_;
         end
-        
+
     end % ProcessVarargin
 
 end % private methods
@@ -970,9 +1018,9 @@ methods (Access = public)
             if (finalPitch_deg == obj.pitch_deg_)
                 spiralingManeuver = true;
             else
-                warning(['ChangeDirection: Spiraling cannot be honored ', ...
+                error(['ChangeDirection: Spiraling cannot be honored ', ...
                     'because final pitch (%f deg) does not equal current ', ...
-                    'pitch (%f deg). Ignoring spiral request...'], ...
+                    'pitch (%f deg).'], ...
                     finalPitch_deg, ...
                     obj.pitch_deg_);
             end
@@ -1015,6 +1063,18 @@ methods (Access = public)
         [pointsAreClose, pointsAreAntipodal, p, q, anglePq_deg] = ...
             getAngleInfo(az1_deg, el1_deg, az2_deg, el2_deg, threshold_deg);
 
+        haveConnectingAngles = isfield(options, 'connectingAz_deg') && ...
+            isfield(options, 'connectingEl_deg');
+
+        if (haveConnectingAngles && ~pointsAreAntipodal)
+            warning(['ChangeDirection: Connecting angles detected, but the angles ', ...
+                '(%f, %f) and (%f, %f) are not antipodal. Ignoring...'], ...
+                az1_deg, ...
+                el1_deg, ...
+                az2_deg, ...
+                el2_deg);
+        end
+
         if (pointsAreClose)
             % The change is insignificant.
             warning(['ChangeDirection: Starting angles (%f, %f deg) and ending angles ', ...
@@ -1022,19 +1082,64 @@ methods (Access = public)
                 az1_deg, ...
                 el1_deg, ...
                 az2_deg, ...
-                el2_deg);                
+                el2_deg);
             return;
         elseif (pointsAreAntipodal)
-            % Select a third point (az3, el3) to define a unique great circle.
-            [az3_deg, el3_deg] = TrajMaker.GetIntermediateAntipodalPoint(...
-                az1_deg, el1_deg, az2_deg, el2_deg);
-            
-            % The code that follows relies on pqAngle_deg. Changing q
-            % to calculate a useful v and u shouldn't break anything.
+            % If valid connecting angles have been defined, use them. Otherwise,
+            % fall back to a generic method.
+            if (haveConnectingAngles)
+                az3_deg = options.connectingAz_deg;
+                el3_deg = options.connectingEl_deg;
+
+                if (spiralingManeuver)
+                    % We must force the connecting elevation angle to zero to
+                    % honor the spiral.
+                    el3_deg = 0.;
+                end
+
+                % For the connecting angles to be useful they cannot be very
+                % close to the starting or ending angles.
+                [close, ~, ~, ~, ~] = getAngleInfo(az1_deg, el1_deg, az3_deg, ...
+                    el3_deg, threshold_deg);
+                if (close)
+                    error(['ChangeDirection: Connecting angles (%f, %f) are too ', ...
+                        'close to starting angles (%f, %f).'], ...
+                        az3_deg, ...
+                        el3_deg, ...
+                        az1_deg, ...
+                        el1_deg);
+                end
+
+                [close, ~, ~, ~, ~] = getAngleInfo(az2_deg, el2_deg, az3_deg, ...
+                    el3_deg, threshold_deg);
+                if (close)
+                    error(['ChangeDirection: Connecting angles (%f, %f) are too ', ...
+                        'close to ending angles (%f, %f).'], ...
+                        az3_deg, ...
+                        el3_deg, ...
+                        az2_deg, ...
+                        el2_deg);
+                end
+            else
+                [az3_deg, el3_deg] = TrajMaker.GetIntermediateAntipodalAngles(...
+                    az1_deg, el1_deg, az2_deg, el2_deg);
+                warning(['ChangeDirection: No connecting angles specified for ', ...
+                    'antipodal angles (%f, %f) and (%f, %f). Automatically using ', ...
+                    'angles (%f, %f) to complete the great circle.'], ...
+                    az1_deg, ...
+                    el1_deg, ...
+                    az2_deg, ...
+                    el2_deg, ...
+                    az3_deg, ...
+                    el3_deg);
+            end
+
+            % The code that follows relies on pqAngle_deg. Changing q to 
+            % calculate a useful v and u shouldn't break anything.
             [qN, qE, qD] = sph2NED_deg(az3_deg, el3_deg, 1.);
             q = [qN, qE, qD];
         end
-        
+
         % Now that we know the request will not be ignored, it is safe to
         % propagate.
         obj = obj.PropagateToTime(startingTime_s);
@@ -1707,9 +1812,9 @@ methods (Access = public)
             if (finalPitch_deg == obj.pitch_deg_)
                 spiralingManeuver = true;
             else
-                warning(['ChangeDirectionAndSpeed: Spiraling cannot be honored ', ...
+                error(['ChangeDirectionAndSpeed: Spiraling cannot be honored ', ...
                     'because final pitch (%f deg) does not equal current ', ...
-                    'pitch (%f deg). Ignoring spiral request...'], ...
+                    'pitch (%f deg).'], ...
                     finalPitch_deg, ...
                     obj.pitch_deg_);
             end
@@ -1756,23 +1861,80 @@ methods (Access = public)
             return;
         end
 
+        haveConnectingAngles = isfield(options, 'connectingAz_deg') && ...
+            isfield(options, 'connectingEl_deg');
+
+        if (haveConnectingAngles && ~pointsAreAntipodal)
+            warning(['ChangeDirection: Connecting angles detected, but the angles ', ...
+                '(%f, %f) and (%f, %f) are not antipodal. Ignoring...'], ...
+                az1_deg, ...
+                el1_deg, ...
+                az2_deg, ...
+                el2_deg);
+        end
+
+        if (pointsAreAntipodal)
+            % If valid connecting angles have been defined, use them. Otherwise,
+            % fall back to a generic method.
+            if (haveConnectingAngles)
+                az3_deg = options.connectingAz_deg;
+                el3_deg = options.connectingEl_deg;
+
+                if (spiralingManeuver)
+                    % We must force the connecting elevation angle to zero to
+                    % honor the spiral.
+                    el3_deg = 0.;
+                end
+
+                % For the connecting angles to be useful they cannot be very
+                % close to the starting or ending angles.
+                [close, ~, ~, ~, ~] = getAngleInfo(az1_deg, el1_deg, az3_deg, ...
+                    el3_deg, threshold_deg);
+                if (close)
+                    error(['ChangeDirection: Connecting angles (%f, %f) are too ', ...
+                        'close to starting angles (%f, %f).'], ...
+                        az3_deg, ...
+                        el3_deg, ...
+                        az1_deg, ...
+                        el1_deg);
+                end
+
+                [close, ~, ~, ~, ~] = getAngleInfo(az2_deg, el2_deg, az3_deg, ...
+                    el3_deg, threshold_deg);
+                if (close)
+                    error(['ChangeDirection: Connecting angles (%f, %f) are too ', ...
+                        'close to ending angles (%f, %f).'], ...
+                        az3_deg, ...
+                        el3_deg, ...
+                        az2_deg, ...
+                        el2_deg);
+                end
+            else
+                [az3_deg, el3_deg] = TrajMaker.GetIntermediateAntipodalAngles(...
+                    az1_deg, el1_deg, az2_deg, el2_deg);
+                warning(['ChangeDirection: No connecting angles specified for ', ...
+                    'antipodal angles (%f, %f) and (%f, %f). Automatically using ', ...
+                    'angles (%f, %f) to complete the great circle.'], ...
+                    az1_deg, ...
+                    el1_deg, ...
+                    az2_deg, ...
+                    el2_deg, ...
+                    az3_deg, ...
+                    el3_deg);
+            end
+
+            % The code that follows relies on pqAngle_deg. Changing q to 
+            % calculate a useful v and u shouldn't break anything.
+            [qN, qE, qD] = sph2NED_deg(az3_deg, el3_deg, 1.);
+            q = [qN, qE, qD];
+        end
+
         % Now that we know the request will not be ignored, it is safe to
         % propagate.
         obj = obj.PropagateToTime(startingTime_s);
 
         deg2rad = pi / 180.;
         rad2deg = 180. / pi;
-
-        if (pointsAreAntipodal)
-            % Select a third point (az3, el3) to define a unique great circle.
-            [az3_deg, el3_deg] = TrajMaker.GetIntermediateAntipodalPoint(...
-                az1_deg, el1_deg, az2_deg, el2_deg);
-
-            % The code that follows relies on pqAngle_deg. Changing q
-            % to calculate a useful v and u shouldn't break anything.
-            [qN, qE, qD] = sph2NED_deg(az3_deg, el3_deg, 1.);
-            q = [qN, qE, qD];
-        end
 
         % Normalize the result of the cross products to guarantee unit vectors.
         v = cross(p, q);
