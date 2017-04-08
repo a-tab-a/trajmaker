@@ -1,1 +1,1 @@
-Create complex, realistic trajectories by enforcing nearly continuous changes in acceleration in three dimensions.
+Create complex, realistic, aircraft trajectories by enforcing nearly continuous changes in acceleration in three dimensions.
